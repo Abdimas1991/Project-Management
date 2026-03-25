@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard PBL Manajemen Proyek (AB630)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-inactive { border-bottom: 4px solid transparent; color: #64748b; }
+        .tab-inactive:hover { color: #334155; border-bottom: 4px solid #cbd5e1; }
+        .phase-conceive { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .phase-design { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+        .phase-implement { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .phase-operate { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .timeline-btn-active { ring: 2px solid #2563eb; transform: scale(1.05); shadow: md; border-color: #2563eb; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+    <!-- Chosen Palette: Professional Trust (Slate/Blue/White) with semantic accents for CDIO phases (Blue/Yellow/Green/Red). -->
+    <!-- Application Structure Plan: The SPA is structured into three main tabs: 1. Ikhtisar (Overview) for high-level stats and assessment breakdown; 2. Jadwal Interaktif (Interactive Timeline) functioning as the core exploration tool where users click specific weeks to dynamically reveal detailed activities, outputs, and topics; 3. Rekap Deliverable (Deliverables Summary) listing all A1-A13 artifacts for quick reference. This dashboard layout was chosen to transform a linear, static syllabus into an exploratory, task-oriented environment, prioritizing ease of navigation and quick access to critical project milestones. -->
+    <!-- Visualization & Content Choices: 1. Assessment Weights -> Goal: Inform -> Viz: Doughnut Chart (Chart.js) -> Justification: Clearly shows the heavy 50% reliance on the project portfolio compared to other grading elements. 2. CDIO Time Allocation -> Goal: Proportions -> Viz: Bar Chart (Chart.js) -> Justification: Illustrates the length of each phase across the 14 weeks. 3. 14-Week Journey -> Goal: Organize/Explore -> Viz: Interactive Grid & Detail Panel -> Justification: Prevents text overload; users only see deep details for the week they are currently focusing on. Library: Vanilla JS for DOM updates. NO SVG/Mermaid used; unicode icons substitute graphical needs. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">📘</span>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Manajemen Proyek (AB630)</h1>
+                    <p class="text-sm text-slate-500 font-medium">Dashboard Project-Based Learning | CDIO Framework</p>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100 flex items-center gap-2">
+                <span class="text-xl">🎓</span>
+                <span class="text-sm font-semibold text-blue-800">Semester 6 • 3 SKS</span>
+            </div>
+        </div>
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 flex overflow-x-auto">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-active px-6 py-3 whitespace-nowrap transition-colors duration-200 focus:outline-none">
+                📊 Ikhtisar & Penilaian
+            </button>
+            <button onclick="switchTab('timeline')" id="tab-timeline" class="tab-inactive px-6 py-3 whitespace-nowrap transition-colors duration-200 focus:outline-none">
+                📅 Jadwal Interaktif
+            </button>
+            <button onclick="switchTab('deliverables')" id="tab-deliverables" class="tab-inactive px-6 py-3 whitespace-nowrap transition-colors duration-200 focus:outline-none">
+                📁 Rekap Deliverable
+            </button>
+        </nav>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <section id="view-overview" class="block animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Mengenai Proyek Pembelajaran (PBL)</h2>
+                <p class="text-slate-600 leading-relaxed mb-4">
+                    Selamat datang di dashboard interaktif mata kuliah Manajemen Proyek. Bagian Ikhtisar ini dirancang untuk memberikan pemahaman tingkat tinggi mengenai struktur perkuliahan selama 14 minggu. Proyek ini mengadopsi kerangka kerja <strong>CDIO (Conceive, Design, Implement, Operate)</strong> di mana Anda akan merencanakan, mengeksekusi, dan mengendalikan proyek bisnis nyata secara tim.
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    Perhatikan visualisasi di bawah ini untuk memahami bobot penilaian akhir Anda (yang sangat berfokus pada hasil portofolio proyek) dan bagaimana alokasi waktu didistribusikan di seluruh fase penyelesaian masalah operasional proyek Anda.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 text-center">Bobot Penilaian (Assessment)</h3>
+                    <p class="text-sm text-slate-500 text-center mb-6">Distribusi komponen penentu nilai akhir</p>
+                    <div class="chart-container">
+                        <canvas id="assessmentChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 text-center">Alokasi Waktu Fase CDIO</h3>
+                    <p class="text-sm text-slate-500 text-center mb-6">Distribusi 14 minggu pengerjaan proyek</p>
+                    <div class="chart-container">
+                        <canvas id="cdioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-timeline" class="hidden animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Jadwal Perjalanan Proyek (14 Minggu)</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Bagian ini adalah pusat komando interaktif Anda. Alih-alih membaca dokumen linear, Anda dapat menavigasi setiap minggu perkuliahan dengan mengeklik kartu minggu di panel sebelah kiri. 
+                    Setiap klik akan menampilkan detail materi, aktivitas kelas, dan output (deliverable) wajib yang harus diserahkan tim Anda pada minggu tersebut di panel sebelah kanan. Gunakan alat ini untuk melacak <em>progress</em> dan mempersiapkan rapat proyek mingguan Anda.
+                </p>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <div class="w-full lg:w-1/3 flex flex-col gap-3" id="timeline-grid">
+                </div>
+
+                <div class="w-full lg:w-2/3">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 sticky top-32 min-h-[500px]" id="week-detail-panel">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 text-center space-y-4 py-20">
+                            <span class="text-6xl">👆</span>
+                            <p class="text-lg font-medium">Pilih salah satu minggu di panel kiri<br>untuk melihat detail aktivitas dan artefak.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-deliverables" class="hidden animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Kompilasi Portofolio Proyek (A1 - A13)</h2>
+                <p class="text-slate-600 leading-relaxed">
+                    Fase ini menyajikan daftar periksa terpadu untuk semua artefak (dokumen output) yang wajib diselesaikan tim Anda. Portofolio lengkap ini menyumbang <strong>50% dari nilai akhir</strong> Anda. Gunakan tabel di bawah ini sebagai instrumen <em>Quality Control</em> internal tim Anda untuk memastikan tidak ada dokumen esensial yang terlewat sebelum presentasi integrasi final di Minggu 14.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kode</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Artefak / Deliverable</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fase CDIO</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tenggat Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-slate-200" id="deliverables-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+            <p>📌 Dashboard Pembelajaran Terintegrasi | Administrasi Bisnis Terapan & Logistik Perdagangan Internasional</p>
+            <p class="mt-2">Dikembangkan untuk referensi interaktif aktivitas Project-Based Learning.</p>
+        </div>
+    </footer>
+
+    <script>
+        const projectData = [
+            {
+                week: 1,
+                title: "Team Charter & Sprint Roadmap",
+                phase: "CONCEIVE",
+                phaseClass: "phase-conceive",
+                topic: "Project Management Context & Process Flow",
+                activities: [
+                    "Pembentukan tim (4-5 orang)",
+                    "Brainstorm ide proyek bisnis nyata di sekitar Batam/Kepri",
+                    "Identifikasi masalah berbasis bukti (Evidence-based Problem)",
+                    "Orientasi framework CDIO dan penggunaan template artefak"
+                ],
+                output: "A1: Team Charter, Sprint Roadmap (14 minggu), Problem Statement Awal",
+                assessment: "Written & Oral Question"
+            },
+            {
+                week: 2,
+                title: "Project Charter & Initiation",
+                phase: "CONCEIVE",
+                phaseClass: "phase-conceive",
+                topic: "Project Governance & Initiation",
+                activities: [
+                    "Identifikasi Project Objectives (SMART)",
+                    "Menentukan ruang lingkup tingkat tinggi (High-level Scope)",
+                    "Identifikasi batasan (Constraints) dan Asumsi",
+                    "Penyusunan kerangka dokumen persetujuan proyek"
+                ],
+                output: "A2: Project Charter (Dokumen Penuh mencakup Tujuan, Scope, Timeline Kasar)",
+                assessment: "PP1: Gate 1 Review"
+            },
+            {
+                week: 3,
+                title: "Stakeholder Management",
+                phase: "CONCEIVE",
+                phaseClass: "phase-conceive",
+                topic: "Mengelola Ekspektasi & Komunikasi",
+                activities: [
+                    "Identifikasi Stakeholder (Internal & Eksternal)",
+                    "Pemetaan menggunakan Power-Interest Grid",
+                    "Penyusunan strategi pelibatan (Engagement Strategy)",
+                    "Merancang matriks komunikasi (Communication Plan)"
+                ],
+                output: "A3: Stakeholder Register, Power-Interest Grid, Communication Plan",
+                assessment: "Performance Rating"
+            },
+            {
+                week: 4,
+                title: "Scope Management & WBS",
+                phase: "CONCEIVE",
+                phaseClass: "phase-conceive",
+                topic: "Merinci Pekerjaan Proyek",
+                activities: [
+                    "Mendefinisikan Project Scope Statement secara naratif",
+                    "Memecah pekerjaan menggunakan Work Breakdown Structure (WBS) hingga level 3",
+                    "Menyusun WBS Dictionary untuk penjelasan teknis tiap paket"
+                ],
+                output: "A4: Project Scope Statement, WBS Diagram, WBS Dictionary",
+                assessment: "Written Question & Assignment"
+            },
+            {
+                week: 5,
+                title: "Schedule Management",
+                phase: "DESIGN",
+                phaseClass: "phase-design",
+                topic: "Estimasi Waktu & Urutan Kerja",
+                activities: [
+                    "Mendefinisikan Activity List dari WBS",
+                    "Membuat Network Diagram (Predecedence Diagramming Method)",
+                    "Menganalisis Critical Path untuk mencari rute kritis waktu",
+                    "Menyusun jadwal visual menggunakan Gantt Chart"
+                ],
+                output: "A5: Activity List, Network Diagram, Critical Path Analysis, Gantt Chart",
+                assessment: "Performance Rating"
+            },
+            {
+                week: 6,
+                title: "Cost Management & Budgeting",
+                phase: "DESIGN",
+                phaseClass: "phase-design",
+                topic: "Perencanaan Keuangan Proyek",
+                activities: [
+                    "Estimasi biaya sumber daya (Bottom-Up Estimation)",
+                    "Menambahkan cadangan darurat (Contingency Reserve)",
+                    "Menetapkan Budget Baseline",
+                    "Merencanakan kurva pengeluaran (S-Curve Plan)"
+                ],
+                output: "A6: Resource Cost Estimation, Budget Baseline, S-Curve Plan",
+                assessment: "Oral Presentation"
+            },
+            {
+                week: 7,
+                title: "Resource Plan & RACI Matrix",
+                phase: "DESIGN",
+                phaseClass: "phase-design",
+                topic: "Manajemen Tim dan Tanggung Jawab",
+                activities: [
+                    "Merancang Project Organization Chart",
+                    "Menyusun matriks pertanggungjawaban (RACI Matrix)",
+                    "Menganalisis Resource Histogram untuk mencegah beban kerja berlebih",
+                    "Persiapan kompilasi dokumen untuk evaluasi Mid-Semester"
+                ],
+                output: "A7: Project Org Chart, RACI Matrix, Resource Histogram + Persiapan MSE",
+                assessment: "Mid-Semester Evaluation (MSE)"
+            },
+            {
+                week: 8,
+                title: "Risk Management",
+                phase: "IMPLEMENT",
+                phaseClass: "phase-implement",
+                topic: "Antisipasi Ketidakpastian Proyek",
+                activities: [
+                    "Identifikasi risiko teknis, finansial, operasional",
+                    "Analisis risiko kualitatif (Probabilitas vs Dampak)",
+                    "Pembuatan Risk Heat Map",
+                    "Menyusun strategi respons (Mitigate, Avoid, Transfer, Accept)"
+                ],
+                output: "A8: Risk Register (min 10 risiko), Risk Heat Map, Risk Response Plan",
+                assessment: "Assignment Submission"
+            },
+            {
+                week: 9,
+                title: "Quality Management",
+                phase: "IMPLEMENT",
+                phaseClass: "phase-implement",
+                topic: "Menjamin Standar Mutu Output",
+                activities: [
+                    "Menetapkan standar teknis (Quality Metrics)",
+                    "Menentukan prosedur Quality Assurance",
+                    "Merancang Quality Control (QC) Log untuk pencatatan cacat",
+                    "Penyusunan draf Standard Operating Procedure (SOP)"
+                ],
+                output: "A9: Quality Metrics, QA Procedures, QC Log, SOP Draft",
+                assessment: "Performance Rating"
+            },
+            {
+                week: 10,
+                title: "Procurement & Issue Log",
+                phase: "IMPLEMENT",
+                phaseClass: "phase-implement",
+                topic: "Manajemen Vendor dan Masalah Harian",
+                activities: [
+                    "Penyusunan Procurement Plan (Rencana Pengadaan)",
+                    "Pemilihan kriteria vendor eksternal",
+                    "Mencatat masalah yang sudah terjadi ke dalam Issue Log",
+                    "Diskusi status penyelesaian masalah (Open/Closed)"
+                ],
+                output: "A10: Procurement Plan, Vendor Comparison (opsional), Issue Log",
+                assessment: "Written Question"
+            },
+            {
+                week: 11,
+                title: "Monitoring & EVM",
+                phase: "IMPLEMENT",
+                phaseClass: "phase-implement",
+                topic: "Pengukuran Kinerja Matematis",
+                activities: [
+                    "Menghitung Planned Value (PV), Earned Value (EV), Actual Cost (AC)",
+                    "Menganalisis Cost Performance Index (CPI) dan Schedule Performance Index (SPI)",
+                    "Mengevaluasi status proyek (Overbudget/Underbudget, Behind/Ahead Schedule)",
+                    "Menyusun visualisasi tren performa"
+                ],
+                output: "A11: Laporan EVM (PV, EV, AC, CPI, SPI), Status Performa Proyek",
+                assessment: "EVM Calculation Assignment"
+            },
+            {
+                week: 12,
+                title: "Change Management",
+                phase: "IMPLEMENT",
+                phaseClass: "phase-implement",
+                topic: "Pengendalian Perubahan Scope",
+                activities: [
+                    "Mensimulasikan proses permintaan perubahan (Change Request)",
+                    "Menganalisis dampak perubahan terhadap jadwal dan anggaran",
+                    "Mendokumentasikan keputusan ke dalam Change Log",
+                    "Update baseline dokumen jika perubahan disetujui"
+                ],
+                output: "A12: Change Request Form, Change Log, Impact Analysis",
+                assessment: "Performance Rating"
+            },
+            {
+                week: 13,
+                title: "Project Closure Preparation",
+                phase: "OPERATE",
+                phaseClass: "phase-operate",
+                topic: "Memastikan Kewajiban Terpenuhi",
+                activities: [
+                    "Melakukan verifikasi hasil akhir dengan Closure Checklist",
+                    "Mengamankan persetujuan (Stakeholder Acceptance)",
+                    "Mengumpulkan catatan keberhasilan dan kegagalan",
+                    "Mendokumentasikan Lessons Learned Register"
+                ],
+                output: "A13: Closure Checklist, Stakeholder Acceptance Form, Lessons Learned Register",
+                assessment: "Pre-Final Audit"
+            },
+            {
+                week: 14,
+                title: "Final Integration & Retrospective",
+                phase: "OPERATE",
+                phaseClass: "phase-operate",
+                topic: "Laporan Final dan Refleksi",
+                activities: [
+                    "Menyusun Executive Summary",
+                    "Analisis deviasi rencana awal vs realisasi akhir",
+                    "Showcase fisik produk/dokumen akhir",
+                    "Melakukan refleksi tim dan evaluasi sejawat (Peer Assessment)"
+                ],
+                output: "FINAL: Laporan Integrasi Akhir, Portfolio A1-A13, Slide Presentasi, Peer Review",
+                assessment: "Final Presentation (FSE)"
+            }
+        ];
+
+        let chartsInitialized = false;
+
+        function renderTimelineGrid() {
+            const container = document.getElementById('timeline-grid');
+            container.innerHTML = '';
+            
+            projectData.forEach((data, index) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-5 py-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-400 hover:shadow-md transition-all duration-200 focus:outline-none flex flex-col gap-2`;
+                btn.id = `timeline-btn-${index}`;
+                btn.onclick = () => showWeekDetails(index);
+                
+                btn.innerHTML = `
+                    <div class="flex justify-between items-center w-full">
+                        <span class="text-sm font-bold text-slate-500">Minggu ${data.week}</span>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-md ${data.phaseClass}">${data.phase}</span>
+                    </div>
+                    <h4 class="text-slate-800 font-bold truncate w-full">${data.title}</h4>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function showWeekDetails(index) {
+            projectData.forEach((_, i) => {
+                const btn = document.getElementById(`timeline-btn-${i}`);
+                if (i === index) {
+                    btn.classList.add('border-blue-500', 'ring-2', 'ring-blue-100', 'bg-blue-50');
+                } else {
+                    btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-100', 'bg-blue-50');
+                }
+            });
+
+            const data = projectData[index];
+            const panel = document.getElementById('week-detail-panel');
+            
+            let activitiesHTML = '<ul class="space-y-3 mt-3">';
+            data.activities.forEach(act => {
+                activitiesHTML += `
+                    <li class="flex items-start gap-3">
+                        <span class="text-blue-500 mt-0.5">🔹</span>
+                        <span class="text-slate-700 leading-relaxed">${act}</span>
+                    </li>
+                `;
+            });
+            activitiesHTML += '</ul>';
+
+            panel.innerHTML = `
+                <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100">
+                    <div class="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-600 shadow-inner">
+                        W${data.week}
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">${data.title}</h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs font-semibold px-2 py-1 rounded-md ${data.phaseClass}">${data.phase} Phase</span>
+                            <span class="text-sm text-slate-500">• CDIO Framework</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-8 animate-fade-in">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <span>🎯</span> Topik Utama
+                        </h4>
+                        <p class="text-lg font-medium text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-100">${data.topic}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <span>🛠️</span> Aktivitas & Pengerjaan
+                        </h4>
+                        ${activitiesHTML}
+                    </div>
+
+                    <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                        <h4 class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <span>📦</span> Deliverable / Output Wajib
+                        </h4>
+                        <p class="text-blue-900 font-semibold leading-relaxed">${data.output}</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 text-sm text-slate-500 bg-white p-4 rounded-xl border border-slate-200">
+                        <span>⚖️</span>
+                        <strong>Metode Asesmen:</strong> ${data.assessment}
+                    </div>
+                </div>
+            `;
+        }
+
+        function populateDeliverables() {
+            const tbody = document.getElementById('deliverables-table-body');
+            tbody.innerHTML = '';
+            
+            projectData.forEach(data => {
+                const parts = data.output.split(':');
+                const code = parts[0].trim();
+                const desc = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">${code}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${desc}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-xs font-semibold px-2 py-1 rounded-md ${data.phaseClass}">${data.phase}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">Minggu ${data.week}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function initCharts() {
+            if (chartsInitialized) return;
+            
+            const ctxAssessment = document.getElementById('assessmentChart').getContext('2d');
+            new Chart(ctxAssessment, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Project Portfolio & Deliverable', 'Mid/Final Evaluation', 'Quiz & Formative', 'Partisipasi Kelas', 'Tugas Individual/Tim'],
+                    datasets: [{
+                        data: [50, 15, 15, 10, 10],
+                        backgroundColor: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20, font: { family: 'Inter' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return ` ${context.label}: ${context.parsed}%`; }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            const ctxCdio = document.getElementById('cdioChart').getContext('2d');
+            new Chart(ctxCdio, {
+                type: 'bar',
+                data: {
+                    labels: ['Conceive', 'Design', 'Implement', 'Operate'],
+                    datasets: [{
+                        label: 'Jumlah Minggu Pengerjaan',
+                        data: [4, 3, 5, 2],
+                        backgroundColor: ['#dbeafe', '#fef08a', '#dcfce7', '#fee2e2'],
+                        borderColor: ['#2563eb', '#ca8a04', '#16a34a', '#dc2626'],
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 6, ticks: { stepSize: 1, font: { family: 'Inter' } } },
+                        x: { ticks: { font: { family: 'Inter', weight: 'bold' } } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return ` ${context.parsed.y} Minggu`; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            chartsInitialized = true;
+        }
+
+        function switchTab(tabId) {
+            ['overview', 'timeline', 'deliverables'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                document.getElementById(`tab-${id}`).className = 'tab-inactive px-6 py-3 whitespace-nowrap transition-colors duration-200 focus:outline-none';
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).className = 'tab-active px-6 py-3 whitespace-nowrap transition-colors duration-200 focus:outline-none';
+
+            if (tabId === 'overview') {
+                initCharts();
+            } else if (tabId === 'timeline') {
+                if(document.getElementById('week-detail-panel').innerHTML.includes('Pilih salah satu')) {
+                    showWeekDetails(0);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTimelineGrid();
+            populateDeliverables();
+            initCharts(); 
+        });
+
+    </script>
+</body>
+</html>
